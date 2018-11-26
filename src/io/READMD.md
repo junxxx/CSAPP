@@ -2,3 +2,6 @@
 
 ## Reading and Writing Files
 
+todo errno EINTR
+
+buffer type or unbuffer type
