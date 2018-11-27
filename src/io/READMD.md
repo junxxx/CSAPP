@@ -5,3 +5,5 @@
 todo errno EINTR
 
 buffer type or unbuffer type
+
+thread safe
