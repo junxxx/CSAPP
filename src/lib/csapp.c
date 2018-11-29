@@ -1,9 +1,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <netdb.h>
 
 /**
  * Robust I/O package
@@ -125,3 +127,77 @@ ssize_t rio_readnb(rio_t *rp, void *usrbuf, size_t n)
     }
     return n - nleft;           /* Return >= 0 */
 }
+
+int open_clientfd(char *hostname, char *port)
+{
+    int clientfd;
+    struct addrinfo hints, *lisp, *p;
+
+    /* Get a list of potential server address */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_socktype = SOCK_STREAM;    /* open a connection */
+    hints.ai_flags = AI_NUMERICSERV;    /* ... using a numeric port arg.*/
+    hints.ai_flags |= AI_ADDRCONFIG;    /* recommended for connection */
+    getaddrinfo(hostname, port, &hints, &lisp);
+
+    /* walk the list for one that we can successfully connect to */
+    for (p = lisp; p; p = p->ai_next) {
+        /* create a socket descriptor */
+        if ((clientfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) 
+            continue;   /* socket failed, try the next */
+
+        /* connect to the server */
+        if (connect(clientfd, p->ai_addr, p->ai_addrlen) != -1)
+            break;
+        close(clientfd);    /* connect failed, try another */
+    }
+
+    /* clean up */
+    freeaddrinfo(lisp);
+    if (!p)                 /* all connects failed */
+        return -1;
+    else                    /* the last connect succeeded */
+        return clientfd;    
+}
+
+
+int open_listenfd(char *port)
+{
+    struct addrinfo hints, *lisp, *p;
+    int listenfd, optval=1;
+
+    /* get a list of potential server adresses */
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_socktype = SOCK_STREAM;        /* accept connections */
+    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG;    /* ... on any IP address */
+    hints.ai_flags |= AI_NUMERICSERV;               /* ... using port number */
+    getaddrinfo(NULL, port, &hints, &lisp);
+
+    /* walk the list for one that we can bind to */
+    for (p = lisp; p; p = p->ai_next) {
+        /*create a socket descriptor */
+        if ((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0)
+            continue;       /* socket failed, try the next */
+
+        /*eliminates "address already in use" error from bind */
+        setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const void *)&optval, sizeof(int));
+
+        /* bind the descriptor to the address*/
+        if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)
+            break;          /* success*/
+        close(listenfd);    /* bind failed, try the next */
+    }
+
+    /*clean up*/
+    freeaddrinfo(lisp);
+    if (!p)                 /* no address worked */ 
+        return -1;
+
+    /* make it listening socekt ready to accept connection requests */
+    if (listen(listenfd, LISTENQ) < 0){
+        close(listenfd);
+        return -1;
+    }
+    return listenfd;
+}
+
