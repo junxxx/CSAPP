@@ -19,6 +19,7 @@ typedef struct {
     char rio_buf[RIO_BUFSIZE];  /* Internal buferr */
 } rio_t;
 
+typedef struct sockaddr SA;
 
 
 //Robust I/O
