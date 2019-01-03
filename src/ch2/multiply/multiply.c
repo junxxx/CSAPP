@@ -3,7 +3,7 @@ int main()
 {
     int x = 4, y = 3, z;
     int yield_num;
-    
+
     z = x * y;
     yield_num = (x << 1) + x;
 
