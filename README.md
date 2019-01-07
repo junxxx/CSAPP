@@ -11,6 +11,8 @@ CPU(ALU,Register,Cache),Memory,Buses,I/O
 addressing and byte order
 big-endian little-endian
 
+comparsion will casting number,
+
 ### Machine-Level Representation of Programs
 
 ### Processor Architecture
