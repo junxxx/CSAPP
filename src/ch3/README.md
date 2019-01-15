@@ -6,3 +6,11 @@ gcc -c source.c
 view object-code file with objdump
 objdump -d object.o
 ```
+$  consent value
+%  register
+() memory reference
+mov class
+b byte
+w 2 bytes
+l 4 bytes
+q 8 bytes
